@@ -1,0 +1,36 @@
+-I = --insert 在INPUT 链插入一条规则（在第二个位置插入-I INPUT 2）
+iptables -t filter -I INPUT 2 -p icmp -j DROP
+
+-D = --delete 删除第一条规则
+iptables -t filter -D INPUT 1
+
+-R = --replace 替换规则表的某个规则（替换第二条规则）
+iptables -t filter -R INPUT 2 -p icmp -j DROP
+
+-F = --flush 清除表中所有规则
+iptables -t filter -F
+清除 filter 表 INPUT 链上的所有规则
+iptables -t filter -F INPUT
+
+创建自定义链（-N = new）
+iptables -t filter -N self_control
+增加自定义链规则
+iptables -t filter -I self_control -s 192.151.102.2 -j REJECT
+引用自定义链
+iptables -t filter -I INPUT -j self_control
+清空自定义链规则
+iptables -t filter -F self_ctl
+删除链引用规则
+iptables -t filter -D INPUT 1
+删除自定义链
+iptables -X self_ctl
+重命名自定义链
+iptables -E self_control self_ctl
+
+丢弃目标端口为8080的tcp的包
+iptables -t filter -A INPUT -j DROP -p tcp --drop 8080
+
+将本机8888端口转换到10.0.0.2:80
+iptables -t nat -A PREROUTING -p tcp --dport 8888 -j DNAT --to 10.0.0.2:80
+将源10.0.0.2:80转换为本地地址
+iptables -t nat -A POSTROUTING -p tcp -d 10.0.0.2 --dport 80 -j SNAT --to 10.0.0.1  （--to 10.0.0.1可以写成：-j MASQUERADE）

@@ -1,0 +1,3 @@
+ubuntu:
+sudo umount /dev/cdrom
+dd if=/dev/cdrom of=file.iso bs=1024 

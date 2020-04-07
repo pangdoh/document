@@ -1,0 +1,4 @@
+在网上看了看，是说linux下的java生成随机数据有bug！
+修改 $JAVA_HOME/jre/lib/security/java.security 文件
+将 securerandom.source=file:/dev/urandom 改为 securerandom.source=file:dev/./urandom
+重启weblogic后再打开console响应正常了！

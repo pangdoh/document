@@ -1,0 +1,7 @@
+vi /etc/apt/apt.conf.d/98https-http-proxy
+
+添加如下内容：
+Acquire::http::Proxy "http://10.254.76.149:1080";
+Acquire::https::Proxy "http://47.244.17.247:8888";
+
+保存即可

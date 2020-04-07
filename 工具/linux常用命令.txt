@@ -1,0 +1,175 @@
+﻿--修改IP地址
+1.修改静态IP(重启生效):
+#首先修改 vi /etc/sysconfig/network
+NETWORKING=yes
+HOSTNAME=localhost.localdomain
+GATEWAY=192.168.187.2
+#然后修改 vi /etc/sysconfig/network-scripts/ifcfg-eth0(最后的eth0是网卡名，我的是Auto_eth0)
+IPADDR：IP地址
+NETMASK：子网掩码
+GATEWAY：网关地址
+BROADCAST：广播地址
+HWADDR/MACADDR：MAC地址。只需设置其中一个，同时设置时不能相互冲突。
+PEERDNS：是否指定DNS。如果使用DHCP协议，默认为yes。
+DNS{1, 2}：DNS地址。当PEERDNS为yes时会被写入/etc/resolv.conf中。
+#最后配置下 vi /etc/resolv.conf
+nameserver 8.8.8.8
+编辑完成后，保存退出
+--重启网络服务
+service network restart或/etc/init.d/network restart
+
+2.即时生效:# ifconfig eth0 192.168.1.155 netmask 255.255.255.0
+  即时生效（增加默认网关）:# route add default gw 192.168.1.1 
+
+--创建用户
+adduser phpq #新建phpq用户
+passwd phpq #给phpq用户设置密码
+groupadd test #建工作组
+useradd -g test phpq #新建用户同时增加工作组
+usermod -G groupname username或者gpasswd -a user group #给已有的用户增加工作组
+#临时关闭：在/etc/shadow文件中属于该用户的行的第二个字段（密码）前面加上*就可以了。想恢复该用户，去掉*即可。
+#或者使用如下命令关闭用户账号：passwd peter –l
+#重新释放：passwd peter –u
+#永久性删除用户账号 userdel peter/groupdel peter
+usermod –G peter peter #强制删除该用户的主目录和主目录下的所有文件和子目录
+#从组中删除用户
+编辑/etc/group 找到GROUP1那一行，删除 A 或者用命令 gpasswd -d A GROUP
+1.创建用户组
+groupadd  -g 801 db2das
+2.新用户加入用户组
+useradd  -g  801 -d /home/db2das db2das
+3.删除用户/完全删除用户
+userdel pasadena/userdel -r pasadena
+
+--查看开放哪些端口
+1.查看哪些端口被打开  netstat -anp
+2.关闭端口号:
+	iptables -A INPUT -p tcp --drop 80-j DROP
+	iptables -A OUTPUT -p tcp --dport 80-j DROP
+3.打开端口号：
+	iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+	iptables -A OUTPUT -p tcp --dport 80 -j ACCEPT
+	/etc/rc.d/init.d/iptables save
+4.重启防火墙服务
+/etc/rc.d/init.d/iptables restart
+开放端口的方法：
+
+方法一：命令行方式
+1.开放端口命令： /sbin/iptables -I INPUT -p tcp --dport 8080 -j ACCEPT
+2.保存：/etc/rc.d/init.d/iptables save
+3.重启服务：/etc/init.d/iptables restart
+4.查看端口是否开放：/sbin/iptables -L -n
+方法二：直接编辑/etc/sysconfig/iptables文件
+1.编辑/etc/sysconfig/iptables文件：vi /etc/sysconfig/iptables
+   加入内容并保存：-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 8080 -j ACCEPT
+2.重启服务：/etc/init.d/iptables restart
+3.查看端口是否开放：/sbin/iptables -L -n
+
+--关闭防火墙
+service iptables stop --停止
+service iptables start --启动
+永久关闭防火墙：chkconfig iptables off
+
+--查看端口状态
+/etc/init.d/iptables status
+
+--强制杀死某个端口进程
+fuser -k -n tcp 80
+
+--执行命令查看命令别名
+alias 命令
+--执行不走别名
+unalias 命令
+--复制文件（源文件/目标文件）
+cp /test1/file1 /test3/file2
+cp -rf /zkr/HLJOA/test1(文件夹)/* /zkr/HLJOA/test2（文件夹）
+--远程复制文件
+把本机文件拷贝到远程机器上
+scp /home/hundsun/appcom/* 用户名@10.20.27.239:/home/hundsun/appcom
+把远程机器上的文件拷贝到本机
+scp 10.20.27.239:/home/hundsun/appcom/* /home/hundsun/test
+--删除文件
+rm
+--移动（重命名）
+将/a目录移动到/b下，并重命名为c
+mv /a /b/c
+mv -f /a /b/c(不提示，强制覆盖)
+
+--解压zip
+unzip 文件
+unzip 文件 -d 目标目录
+
+--不占用当前终端，后台执行命令
+command &
+--退出当前终端不挂起
+nohup command &
+--不停止服务清空nohup.out文件
+第一种：cp /dev/null nohup.out
+第二种：cat /dev/null > nohup.out
+
+--查看当前时区
+命令 ： "date -R"
+
+--查看linux下的硬盘挂载的空间、使用空间
+--使用下面命令格式化已附加上，但df -h不能看到的卷
+使用命令 ： df -h（Filesystem 文件系統、size、文件大小、Used 使用空间、Mounted on 挂载的目录）
+
+--查看系统检测的硬盘
+命令：lsblk
+--使用下面命令格式化已附加上，但df -h不能看到的卷
+mkfs -t ext4 /dev/nvmeOn1  #备注  nvmeOn1（硬盘） 都是存在在/dev 下面的
+--挂载命令 把空间挂在/data  把格式化后的卷mount到一个目录
+mount /dev/nvmeOn1 /data
+
+（--使用完挂载后取消挂载点 umount /dev/nvmeOn1）
+
+--到 /etc/fstab 下配置挂载信息，添加一条记录，如有就复制一条，修改一下即可（十分重要）
+添加如下：
+/dev/nvmeOn1 /data auto defaults,nofail,comment=cloudconfig 0 2
+（添加完毕以后可以试一下fstab文件是否能正常运行。命令：mount -a  测试是否挂载成功（如果出错，不要重启，否则就GG了））
+
+#查看网络交互信息
+netstat -pantu | egrep -v '0.0.0.0' | :::' | awk '{print $5}'
+
+#创建连接
+ln -r(s) 源 目标
+#取消连接
+unlink 目标
+#删除链接
+rm 目标
+
+#安装32位yum源
+Centos系统：默认配置了yum外网官方源地址，可以直接使用在线安装方案
+yum install xulrunner.i686
+Centos系统：默认配置了yum外网官方源地址，可以直接使用在线安装方案
+yum install ia32-libs.i686 glibc.i686 vim*
+
+#非root用户使用1024以下端口
+#使用setcap
+#在root用户下执行命令：
+setcap cap_net_bind_service=+eip 启动文件
+#如果不使用了，使用如下命令即可：
+setcap -r 文件名
+2：
+tables -t nat -A PREROUTING -p tcp –dport 80 -j REDIRECT –to-ports 8080 
+iptables -t nat -A OUTPUT -p tcp -d 127.0.0.1 –dport 80 -j REDIRECT –to-ports 8080
+
+#让非root账号用户可以使用sudo命令
+vim修改“/etc/sudoers”文件
+找到“root    ALL=(ALL)       ALL“,在这行的下面加
+"tjjw    ALL=(ALL)       ALL"
+
+如：
+##Allow root to run any commands anywhere 
+root    ALL=(ALL)       ALL
+tjjw    ALL=(ALL)       ALL
+
+备份DB2数据
+备份:
+db2stop force;db2start;db2 backup db HLJOA compress
+导入:
+db2stop force;db2start;db2 restore db HLJOA
+
+
+编译器：gcc
+执行编译命令：gcc test.c -o test
